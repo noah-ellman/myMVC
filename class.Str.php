@@ -6,34 +6,39 @@ class Str {
 
     }
 
-    public static function instr($hay, $needle) {
-        $len = strlen($needle);
-        if ( $len && $needle[0] == '/' && substr_count($needle, '/') > 1 )
-            return !( self::match($needle, $hay) === FALSE );
-        else
-            return empty($needle) ? FALSE : !( stristr($hay, $needle) === FALSE );
+    public static function contains($hay, $needle) {
+        return self::instr($hay, $needle);
     }
 
+    public static function instr($hay, $needle) {
+        $len = strlen($needle);
+        if ( $len && $needle[0] == '/' && substr($needle, -1) == '/' )
+            return (self::match($needle, $hay) !== false);
+        else
+            return empty($needle) ? false : !(stristr($hay, $needle) === false);
+    }
 
-    public static function gettok($del = NULL, $str = NULL, $pos = 1) {
+    public static function gettok($del = null, $str = null, $pos = 1) {
         $parts = explode($del, $str);
         if ( $pos < 0 ) {
             $parts = array_reverse($parts);
             $pos = abs($pos);
         }
-        return isset($parts[$pos]) ? $parts[$pos - 1] : FALSE;
+        return isset($parts[ $pos ]) ? $parts[ $pos - 1 ] : false;
     }
 
     public static function str_clean($str, $type = 0) {
         if ( $type !== 3 ) $str = strtolower($str);
         if ( $type === 2 ) {
             $str = preg_replace("/[^a-zA-Z0-9]/", '', $str);
-        } else {
+        }
+        else {
             if ( $type === 1 ) {
                 $str = str_replace('\'', '', $str);
                 $str = preg_replace('/[,\/\\\.\-]/', ' ', $str);
                 $str = preg_replace("/[^a-zA-Z0-9 ]/", '', $str);
-            } else {
+            }
+            else {
                 $str = preg_replace('/[\'".\-]/', '', $str);
                 $str = preg_replace("/[^a-zA-Z0-9 ]/", ' ', $str);
             }
@@ -50,21 +55,19 @@ class Str {
     public static function match($reg, $str) {
         $matches = [];
         if ( $reg[0] !== '/' ) $reg = '/' . $reg . '/';
-        if ( !preg_match($reg, $str, $matches) ) return FALSE;
+        if ( !preg_match($reg, $str, $matches) ) return false;
         if ( isset($matches[1]) ) return $matches[1];
         else if ( isset($matches[0]) ) return $matches[0];
-        else return FALSE;
+        else return true;
     }
-
 
     public static function matches($reg, $str) {
         $matches = [];
         if ( $reg[0] !== '/' ) $reg = '/' . $reg . '/';
-        if ( !preg_match_all($reg, $str, $matches) ) return FALSE;
+        if ( !preg_match_all($reg, $str, $matches) ) return false;
         array_shift($matches);
         return $matches;
     }
-
 
     public static function isUTF8($str) {
         return preg_match('%(?:
@@ -78,9 +81,9 @@ class Str {
         )+%xs', $str);
     }
 
-///////////////////////////////////////////////////
-// Make SEO-optimized URI from human string
-///////////////////////////////////////////////////
+    ///////////////////////////////////////////////////
+    // Make SEO-optimized URI from human string
+    ///////////////////////////////////////////////////
     public static function href($str) {
         $str = trim(html_entity_decode(urldecode($str)));
         $str = str_replace('_', ' ', $str);
@@ -91,11 +94,11 @@ class Str {
         return str_replace('Dj ', 'DJ ', $str);
     }
 
-///////////////////////////////////////////////////
-// Make human string from URI
-///////////////////////////////////////////////////
+    ///////////////////////////////////////////////////
+    // Make human string from URI
+    ///////////////////////////////////////////////////
     public static function label($name) {
-        return ucwords(str_replace('_', ' ', ( html_entity_decode(urldecode($name)) )));
+        return ucwords(str_replace('_', ' ', (html_entity_decode(urldecode($name)))));
     }
 
 }

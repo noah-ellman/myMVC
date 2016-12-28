@@ -2,12 +2,15 @@
 
 
 class Data
-
     extends stdClass
-    implements Expando, ArrayAccess, Countable {
+    implements Expando, ArrayAccess, IteratorAggregate, Countable, JSONAble {
 
+    const DATA_ADD_REPLACE_IF_EXISTS = 1;
+    const DATA_ADD_SKIP_IF_EXISTS = 2;
+
+    use TLoggable;
     public function __construct() {
-
+        if( count(get_class_vars(Data::class)) > 0 ) { throw new Exception("Data object can't have properties"); }
         $arg_count = func_num_args();
         $args = func_get_args();
         if ( !$arg_count ) return;
@@ -33,16 +36,20 @@ class Data
     public function __destruct() {
     }
 
-    public function & __get($k) {
+    public function getIterator() {
+        return new ArrayIterator(get_object_vars($this));
+    }
+
+    public function  __get($k) {
         return isset($this->$k) ? $this->$k : NULL;
     }
 
     public function __set($k, $v) {
-        $this->$k = $v;
+        $this->{"$k"} = $v;
     }
 
     public function __isset($k) {
-        return isset($this->$k);
+        return isset($this->{"$k"});
     }
 
     public function __unset($k) {
@@ -53,8 +60,8 @@ class Data
         return json_encode($this);
     }
 
-    public function & offsetGet($k) {
-        return isset($this->$k) ? $this->$k : NULL;
+    public function offsetGet($k) {
+        return isset($this->{"$k"}) ? $this->{"$k"} : NULL;
     }
 
     public function offsetSet($k, $v) {
@@ -76,13 +83,12 @@ class Data
     public function __call($method, $args) {
         $return = NULL;
         switch ( strtolower($method) ) {
-            case 'tojson':
-            case 'json':
-                return json_encode(get_object_vars($this));
-                break;
             case 'toarray':
             case 'array':
-                return get_object_vars($this);
+                if( isset($args[0]) && $args[0] == true) return Arr::obj2array($this);
+                $arr = get_object_vars($this);
+                if( array_key_exists("0",$arr) ) return Arr::numeric($arr);
+                else return $arr;
                 break;
             case 'keys':
                 return array_keys(get_object_vars($this));
@@ -90,13 +96,19 @@ class Data
             case 'values':
                 return array_values(get_object_vars($this));
                 break;
+            case 'numeric':
+                return Arr::array_numeric($this->array());
+                break;
         }
-        if( function_exists("array_$method") ) $method = "array_$method";
-        if ( function_exists($method) ) {
+        if( function_exists("array_$method") ) {
+            $method = "array_$method";
             array_unshift($args, get_object_vars($this));
-            return call_user_func_array($method, $args);
+        } else if ( function_exists($method) ) {
+            array_push($args,get_object_vars($this));
+        } else {
+            return NULL;
         }
-        return NULL;
+        return new static(call_user_func_array($method, $args));
     }
 
     public function all() : array {
@@ -104,7 +116,29 @@ class Data
     }
 
     public function sendTo(DoesDataStorage $obj) {
-        $obj-setData($this->toArray());
+        $obj->setData($this->toArray());
+    }
+
+    public function toJSON() {
+        return json_encode(get_object_vars($this));
+    }
+
+    public function length() {
+        return count($this);
+    }
+
+    public function add($data, $mode = 1) {
+        foreach( $data as $k => $v) {
+            if( $mode == self::DATA_ADD_SKIP_IF_EXISTS ) {
+                if( isset($this->$k) ) continue;
+            }
+            $this->$k = $v;
+        }
+    }
+
+    public function collection() {
+        $this->log(__METHOD__);
+        return new DataCollection($this);
     }
 
 }

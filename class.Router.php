@@ -20,28 +20,32 @@ abstract class Router {
     }
 
     protected function boot() {
-        if( isset($this->request->json) ) $this->responseContentType="json";
-        $this->routePath = $this->request->_route_ ?? "/";
-        $this->setup( $this->parseRoutePath() );
+
+    }
+
+    public function run() {
+        $response =  new Response();
+        $response->prepare($this->request);
+        while( NULL !==  $arr = $this->getNextController() ) {
+            $controller = $arr[0];
+            $action = $arr[1];
+            if( !class_exists($controller) ) throw new Exception("Invalid Controller: $arr[0]");
+            $controller = new $controller($this->request, $response, $action);
+            if( !($controller instanceof Controller) ) throw new Exception("Invalid Controller: $arr[0] (Class exists but is not a Controller)");
+            $result = $controller->run();
+            if( $result instanceof Response ) $response = $result;
+            if ( $result === FALSE ) {
+               $this->log('!', get_class($controller), "returned false");
+            }
+        }
+        $response->send();
     }
 
     protected function parseRoutePath() {
-        $routes = explode('/',$this->routePath);
-        foreach( $routes as $v) {
-            if (!empty($v)) $this->route[] = $v;
-        }
-        $this->route[0] = $this->route[0] ?? $this->getDefaultController();
-        $this->route[1] =  $this->route[1] ?? 'index';
-        $this->route[2] =  $this->route[2] ?? '';
-        return $this->route;
-    }
-
-    public function getResponseContentType() {
-        return $this->responseContentType ?? 'html';
     }
 
 
-    public function addController($className, $action = NULL) {
+    public function addController($className, $action = null) {
         $className = $this->normalizeString($className);
         $action = $this->normalizeString($action);
         $this->log("Adding controller:", $className, $action);
@@ -54,26 +58,27 @@ abstract class Router {
     }
 
     public function getNextController() {
-        if( count($this->controllersStart) ) return array_shift($this->controllersStart);
-        else if( count($this->controllers) ) return array_shift($this->controllers);
-        else if( count($this->controllersEnd) ) return array_shift($this->controllersEnd);
-        else return NULL;
+        if ( count($this->controllersStart) ) return array_shift($this->controllersStart);
+        else if ( count($this->controllers) ) return array_shift($this->controllers);
+        else if ( count($this->controllersEnd) ) return array_shift($this->controllersEnd);
+        else return null;
 
 
     }
 
     protected function normalizeString($string) {
-        $parts = preg_split('/[-_ ]*/',$string);
-        array_walk($parts,'ucwords');
-        return implode('',$parts);
+        $parts = preg_split('/[-_ ]*/', $string);
+        array_walk($parts, 'ucwords');
+        return implode('', $parts);
 
     }
 
 
-    abstract protected function getDefaultController() : string;
+    abstract protected function getDefaultController(): string;
 
     abstract protected function setup($route);
 
+    abstract protected function getMiddleware();
 
 
 }

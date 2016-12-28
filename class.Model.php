@@ -1,6 +1,6 @@
 <?php
 
-class Model implements DoesDataStorage, IteratorAggregate {
+class Model implements JSONAble, Expando, DoesDataStorage, IteratorAggregate {
 
     use TLoggable;
 
@@ -14,10 +14,9 @@ class Model implements DoesDataStorage, IteratorAggregate {
         $this->data = new Data();
     }
 
-
     public function __get($k) {
         if ( isset($this->data->$k) ) return $this->data->$k;
-        else return NULL;
+        else return null;
     }
 
     public function __set($k, $v) {
@@ -32,22 +31,22 @@ class Model implements DoesDataStorage, IteratorAggregate {
         return $this;
     }
 
-    public function getName(): string {
+    public function getName() : string {
         return $this->name;
     }
 
-    public function & getData(): Data {
+    public function & getData() : Data {
         return $this->data;
     }
 
-    public function setData($data): Model {
+    public function setData($data) : Model {
         $this->data = new Data($data);
-        $this->logDump($data, 'Model::setData');
+        $this->logDump($data, get_class($this) . '::setData');
         return $this;
     }
 
-    public function addData($data): Model {
-        foreach ( $data as $k => $v ) $this->data[$k] = $v;
+    public function addData($data) : Model {
+        foreach ( $data as $k => $v ) $this->data[ $k ] = $v;
         $this->logDump($data, 'Model::addData');
         return $this;
     }
@@ -55,4 +54,18 @@ class Model implements DoesDataStorage, IteratorAggregate {
     public function getError() {
         return $this->error;
     }
+
+    public function isValid() {
+        return true;
+    }
+
+    public function clear() {
+        $this->data = new Data();
+        return $this;
+    }
+
+    public function toJSON() {
+        return json_encode($this->data->toArray());
+    }
+
 }

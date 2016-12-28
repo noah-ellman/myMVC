@@ -9,9 +9,10 @@ class DBModel extends Model {
     protected $columns = [];
     protected $columnsMetaData;
     protected $loaded = FALSE;
-
     protected $ignoredColumns = [];
     protected $orderBy = [];
+    protected $relations = [];
+    protected $limit = [1,0];
 
     public function __construct($dataSource = NULL) {
         if ( !is_null($dataSource) ) $this->dataSource = $dataSource;
@@ -29,15 +30,14 @@ class DBModel extends Model {
             }
         }
         $this->columns = array_diff($this->columns, $this->ignoredColumns);
-        $this->logDump($this->columns, "{$this->dataSource} columns");
-        $this->logDump($this->keys, "{$this->dataSource} keys");
-
+        //$this->logDump($this->columns, "{$this->dataSource} columns");
+        //$this->logDump($this->keys, "{$this->dataSource} keys");
     }
 
 
     public function __set($k, $v) {
         if ( isset($this->keys[$k])  ) {
-            $this->log("setting key to $v");
+            $this->log("Setting key to $v");
             $this->keys[$k] = $v;
         }
         parent::__set($k, $v);
@@ -57,28 +57,60 @@ class DBModel extends Model {
 
     public function where(array $keys) {
         $this->keys = $keys;
+        return $this;
     }
 
-
-    public function find() {
-        if ( !count($this->keys) ) {
-            throw new Exception("NO KEYS");
+    public function getRelatedModel($class) {
+        if( isset($this->relations[$class]) ) {
+            $model = new $class();
+            $localkey = $this->relations[$class][0] ?? 'id';
+            $localkeyvalue = $this->{$localkey};
+            $remotekey = $this->relations[$class[1]];
+            $model->where([$remotekey => $localkeyvalue])->find();
+            return $model;
+        } else {
+            $this->log("!no related model $class");
         }
+
+    }
+
+    public function limit($count = 1, $start = 0) {
+        $this->limit = [$count,$start];
+        return $this;
+    }
+
+    public function find($what=null) {
+        if( $what == '*' ) { return $this->loadAll(); }
+        if( $what !== NULL ) $this->where([$this->getTableColumns()->getPrimary() => $what]);
+        if ( !count($this->keys) ) {
+            $this->log("!Warning - fetching without where");
+        }
+        $limit = ' LIMIT ' . implode(',', array_reverse($this->limit));
         $fields = $this->columns;
         $fields_str = ' `' . implode('`,`', array_merge(array_keys($this->keys),$fields)) . '`';
-        $result = $this->query("SELECT $fields_str FROM {$this->dataSource} " . $this->whereClause() . ' LIMIT 1');
+        $result = $this->query("SELECT $fields_str FROM {$this->dataSource} " . $this->whereClause() . $limit);
         if ( $result ) {
-            $this->setData($result[0]);
+            if( $this->limit[0] > 1 ) {
+                $this->setData($result);
+            } else {
+                $this->setData($result[0]);
+            }
             $return = TRUE;
         } else {
             $return = FALSE;
         }
         $this->loaded = TRUE;
-        return $return;
+        return parent::find();
+    }
+
+    public function found() {
+        if( count($this->data) ) return TRUE;
+        return FALSE;
     }
 
     protected function whereClause() {
         $args = [];
+        if( !count($this->keys)) return '';
         foreach ( $this->keys as $k => $v ) $args[] = " `$k` = '$v' ";
         $args = implode(' AND ', $args);
         $args = " WHERE $args ";
@@ -130,18 +162,22 @@ class DBModel extends Model {
         if( strlen($orderBy) ) $orderBy = 'ORDER BY ' . $orderBy;
         $fields = implode(',', array_merge(array_keys($this->keys), $this->columns));
         $result = $this->query("select {$fields} from {$this->dataSource} $orderBy");
-        return $result;
+        $this->setData($result);
+        return $this;
     }
 
     public function getDataSource() {
         return $this->dataSource;
     }
 
+    public function clear() {
+        $this->keys = [];
+        return parent::clear();
+    }
+
     public static function DataSource() {
         $stub = get_called_class();
-        $stub = new $stub();
-        return $stub->getDataSource();
-
+        return (new $stub())->getDataSource();
     }
 
 }

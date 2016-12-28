@@ -14,5 +14,12 @@ class Cloud extends Data {
         else (self::$__self__)->$name = $argv[0];
     }
 
+    public static function render() {
+        return self::$__self__->toJSON();
+    }
+
+    public static function toString() {
+        return json_encode(self::$__self__);
+    }
 
 }

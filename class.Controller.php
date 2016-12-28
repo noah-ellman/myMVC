@@ -4,24 +4,25 @@ abstract class Controller implements DoesDataStorage {
 
     use TLoggable;
 
+    public static $activeController;
     protected $data;
     protected $request;
     protected $view;
     protected $viewName;
     protected $action;
     protected $defaultAction = 'index';
-    public static $activeController;
+    protected $response;
 
-    public function __construct($action = NULL) {
-        $this->request = App::getRequest();
+    public function __construct(Request $request, Response $response, $action = null) {
+        $this->request = $request;
+        $this->response = $response;
         $this->action = $action;
         $this->data = new Data();
+        Cloud::controller(get_class($this));
+        Cloud::action($action);
         $this->log("Booting Controller");
         $this->boot();
     }
-
-    abstract protected function boot();
-
 
     public function run() {
         self::$activeController = $this;
@@ -37,7 +38,7 @@ abstract class Controller implements DoesDataStorage {
         return get_class($this);
     }
 
-    public function getAction(): string {
+    public function getAction() : string {
         $action = $this->action ?? $this->defaultAction;
         $action = "action" . ucwords($action);
         return $action;
@@ -53,7 +54,7 @@ abstract class Controller implements DoesDataStorage {
     }
 
     public function addData($data) {
-        foreach ( $data as $k => $v ) $this->data[$k] = $v;
+        foreach ( $data as $k => $v ) $this->data[ $k ] = $v;
         return $this;
     }
 
@@ -65,12 +66,19 @@ abstract class Controller implements DoesDataStorage {
         $this->model = $model;
     }
 
-    public function getView($viewName = NULL): View {
+    public function getView($viewName = null) : View {
+        if ( $viewName ) {
+            if ( class_exists($viewName) && is_a($viewName, 'View', true) ) {
+                $this->view = new $viewName($this->viewName, null, $this);
+            }
+        }
         if ( $viewName ) $this->viewName = $viewName;
-        if ( !( $this->view instanceof View ) ) $this->view = new View($this->viewName, NULL, $this);
+        if ( !($this->view instanceof View) ) $this->view = new View($this->viewName, null, $this);
         return $this->view;
+
     }
 
+    abstract protected function boot();
 
 }
 

@@ -7,12 +7,15 @@ class Autoloader {
 
     public function __construct(array $locations = null) {
         if( $locations !== null ) {
-            $this->locations = $locations;
+            $this->from($locations);
         }
     }
 
     public function from(array $locations) {
-        foreach($locations as $v) $this->locations[] = $v;
+        foreach($locations as $v) {
+            $this->locations[] = $v;
+            if( file_exists($v .'/autoload.php') ) include_once($v .'/autoload.php');
+        }
         return $this;
     }
 
@@ -31,7 +34,7 @@ class Autoloader {
 
     public function register() {
         if( $this->registered ) return;
-        spl_autoload_register([$this,'load'],true);
+        spl_autoload_register([$this,'load'],true,true);
         $this->registered = true;
         return $this;
     }

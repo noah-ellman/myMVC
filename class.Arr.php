@@ -52,7 +52,7 @@ class Arr {
         return $new;
     }
 
-    public static function array_unset(&$a, $key, $val = FALSE) {
+    public static function unset(&$a, $key, $val = FALSE) {
         if ($val === FALSE) {
             foreach ($a as $k => $v) {
                 if (isset($v[$key])) unset($a[$k][$key]);
@@ -64,7 +64,7 @@ class Arr {
         }
     }
 
-    public static function array_find($a, $key, $val) {
+    public static function find($a, $key, $val) {
         foreach ($a as $k => $v) {
             if (isset($v[$key]) && $v[$key] == $val) return $k;
         }
@@ -72,7 +72,7 @@ class Arr {
         return FALSE;
     }
 
-    public static function array_fetch($a, $key, $val) {
+    public static function fetch($a, $key, $val) {
         foreach ($a as $k => $v) {
             if (isset($v[$key]) && $v[$key] == $val) return $v;
         }
@@ -81,14 +81,16 @@ class Arr {
     }
 
     public static function obj2array($a) {
-        if (is_object($a)) $a = get_object_vars($a);
-        if (is_array($a)) {
-            foreach ($a as $k => $v) {
-                if (is_object($v) || is_array($v)) $a[$k] = obj2array($v);
+        if (is_object($a)) $arr = get_object_vars($a);
+        $new = [];
+        if (is_array($arr)) {
+            foreach ($arr as $k => $v) {
+                if (is_object($v) || is_array($v)) $new[$k] = self::obj2array($v);
+                else $new[$k] = $v;
             }
         }
 
-        return $a;
+        return $new;
     }
 
     public static function in_array_2d($a, $key, $val) {
@@ -100,20 +102,22 @@ class Arr {
     }
 
     public static function array_numeric($a) {
-        if (!is_array($a)) return [];
+        if( is_object($a) ) $a = get_object_vars($a);
+      //  if (!is_array($a)) return [];
+        if (self::is_numeric_array($a) ) return $a;
         $keys = array_keys($a);
         $new = [];
         for ($i = 0, $c = count($keys); $i < $c; $i++) {
             $k = $keys[$i];
             if (is_numeric($k)) {
-                $new[(int)$k] = $a[$k];
+                $new[] = $a[$k];
             }
         }
 
         return $new;
     }
 
-    public static function is_array_scalar($a) {
+    public static function isScalar($a) {
         if (!is_array($a)) return NULL;
         foreach ($a as $v) {
             if ($v !== NULL && !is_scalar($v)) return FALSE;
@@ -125,13 +129,14 @@ class Arr {
 // -------- //
     public static function is_numeric_array($a) {
         if (!is_array($a)) return NULL;
+
         $last = count($a) - 1;
         if ($last < 0) return TRUE;
         if (isset($a[0]) && isset($a[$last])) return TRUE;
         else return FALSE;
     }
 
-    public static function array_randoms($a, $num = 1) {
+    public static function randoms($a, $num = 1) {
         $rands = array_rand($a, min($num, count($a)));
         $num = count($rands);
         if ($num === 1) {
@@ -146,7 +151,7 @@ class Arr {
     }
 
 
-    public static function array_sort_2d(&$a, $key, $rev = FALSE) {
+    public static function sort2d(&$a, $key, $rev = FALSE) {
         if ($rev) $op = '>'; else $op = '<';
         $args = '$a,$b';
         $func = "if(\$a['{$key}']==\$b['{$key}']) return 0; else { if( is_numeric(\$a['{$key}']) ) return ((int)\$a['{$key}']{$op}(int)\$b['{$key}']) ? -1 : 1; else return ((string)\$a['{$key}']{$op}(string)\$b['{$key}']) ? -1 : 1; }";
@@ -160,7 +165,7 @@ class Arr {
         foreach ($a as &$v) unset($v['sort']);
     }
 
-    public static function array_rekey_merge($a, $key) {
+    public static function rekey_merge($a, $key) {
         $new = [];
         foreach ($a as $k => $v) {
             $nkey = $v[$key];
@@ -172,7 +177,7 @@ class Arr {
         return $new;
     }
 
-    public static function array_rekey($a, $key) {
+    public static function rekey($a, $key) {
         $new = [];
         foreach ($a as $k => $v) {
             $nkey = $v[$key];
@@ -183,14 +188,15 @@ class Arr {
         return $new;
     }
 
-    public static function array_combine_2d($a) {
+    public static function combine_2d($a) {
         $k = array_keys($a[0]);
 
         return array_combine(array_values_2d($a, $k[0]), array_values_2d($a, $k[1]));
     }
 
-    public static function array_values_2d($a, $key, $key2 = NULL) {
+    public static function values_2d($a, $key, $key2 = NULL) {
         $newarray = [];
+        if( $a instanceof Data ) $a = self::obj2array($a);
         foreach ($a as $k => $v) {
             if (isset($v[$key]))
                 if (!is_null($key2)) {
@@ -204,7 +210,7 @@ class Arr {
     }
 
 // -------- //
-    public static function array_unique_2d($a, $key) {
+    public static function unique_2d($a, $key) {
         $newarray = [];
         if (!is_array($a)) $a = [];
         foreach ($a as $k => $v) {
@@ -220,13 +226,13 @@ class Arr {
     }
 
 ///////////////////////////////////////////////////
-    public static function array_diff_assoc_recursive($a1, $a2) {
+    public static function diff_assoc_recursive($a1, $a2) {
         foreach ($a1 as $key => $value) {
             if (is_array($value)) {
                 if (!is_array($a2[$key])) {
                     $difference[$key] = $value;
                 } else {
-                    $new_diff = array_diff_assoc_recursive($value, $a2[$key]);
+                    $new_diff = self::array_diff_assoc_recursive($value, $a2[$key]);
                     if ($new_diff != FALSE) {
                         $difference[$key] = $new_diff;
                     }
@@ -240,7 +246,7 @@ class Arr {
     }
 
 ///////////////////////////////////////////////////
-    public static function array_rebuild($a) {
+    public static function rebuild($a) {
         $new = [];
         foreach ($a as $v) $new[] = $v;
 

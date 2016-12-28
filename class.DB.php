@@ -10,9 +10,11 @@ class DB extends mysqli implements IService {
                             'socket' => NULL];
 
     private $app;
-    private $debug_qtime, $debug_qcount, $debug_timer;
+    protected $debug_qtime, $debug_qcount, $debug_timer;
 
-
+    public function provides() {
+        return 'db';
+    }
 
     public function __construct(App $app) {
         $this->app = $app;
@@ -88,7 +90,7 @@ class DB extends mysqli implements IService {
             return FALSE;
         }
         if ( $count === 1 ) {
-            $f = $result->fetch_object();
+            $f = $result->fetch_object(Data::class);
             $result->free();
             if ( $field_count > 1 ) return [0 => $f];
             else {
@@ -98,7 +100,7 @@ class DB extends mysqli implements IService {
         } else {
             $all = [];
             do {
-                $all[] = $result->fetch_object();
+                $all[] = $result->fetch_object(Data::class);
             } while ( --$count > 0 );
             $result->free();
             return $all;

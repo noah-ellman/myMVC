@@ -1,6 +1,6 @@
 <?
 
-class Cookies extends Data implements IService, Expando {
+class Cookies extends Service implements IService {
 
     public function __construct() {
         foreach($_COOKIE as $k => $v) {

@@ -2,7 +2,7 @@
 
 class DBDebug extends DB {
 
-    private $debug_qtime, $debug_qcount, $debug_timer;
+
 
 
     public function query($query, $ret = 1, $fail = 1) {
@@ -11,6 +11,9 @@ class DBDebug extends DB {
                             "\n"], ' ', htmlspecialchars($query));
         $this->debug_timer = (float)microtime(true);
         $r = parent::query($query);
+        if( $this->warning_count ) {
+            $this->dump($this->get_warnings(), 'SQL WARNINGS');
+        }
         $this->debug_timer = round(microtime(true) - $this->debug_timer, 4);
         $this->debug_qtime += $this->debug_timer;
         $timer = '';

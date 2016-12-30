@@ -35,7 +35,7 @@ class DB extends mysqli implements IService {
     }
 
     public function close() {
-        parent::close();
+        if( $this->connected ) parent::close();
         $this->connected = FALSE;
     }
 

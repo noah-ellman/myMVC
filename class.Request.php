@@ -1,5 +1,5 @@
 <?php
-
+  
 use Symfony\Component\HttpFoundation\Request as SymfonyRequest;
 
 class Request extends SymfonyRequest {
@@ -51,6 +51,14 @@ class Request extends SymfonyRequest {
         if( $this->isXmlHttpRequest() || isset($_SERVER['HTTP_X_REQUESTED_WITH']) )
             return true;
         else return false;
+    }
+ 
+    public function getUploadedFile() : \Symfony\Component\HttpFoundation\File\UploadedFile {
+        $file = $this->files->keys();
+        if( !count($file) ) return null;
+        $file = $this->files->get($file[0]);
+        return $file;
+
     }
 
 

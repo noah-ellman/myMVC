@@ -6,16 +6,6 @@ include 'traits.php';
 include 'interfaces.php';
 
 
-if ( php_sapi_name() === "cli" && !defined('CONSOLE') ) define('CONSOLE', true);
-if ( !isset($_SERVER['GATEWAY_INTERFACE']) && !defined('CONSOLE') ) define('CONSOLE', true);
-if ( !defined('CONSOLE') && session_id() and !defined('WEBSITE') and !defined('POD') and !defined('AJAX') ) define('WEBSITE', true);
-if ( defined('AJAX') && !defined('POD') ) define('POD', 1);
-define('CLI', php_sapi_name() === "cli" ? true : false);
-if ( !CLI ) {
-    define('DOMAIN', strtolower($_SERVER['HTTP_HOST']));
-}
-
-
 class Bootstrap {
 
     public static $config;
@@ -24,6 +14,9 @@ class Bootstrap {
     private static $app = null;
 
     public function __construct($config_file = "config.php") {
+
+        self::getEnviroment();
+
 
         if ( file_exists($config_file) ) {
             $config = include $config_file;
@@ -34,6 +27,7 @@ class Bootstrap {
         }
         if ( self::$instance !== null ) throw new Exception("Bootstrap is a singleton.");
         self::$instance = $this;
+
 
         register_shutdown_function(
             function() {
@@ -48,10 +42,24 @@ class Bootstrap {
 
         new App();
 
+    }
 
+    public static function getEnviroment() {
+        if ( php_sapi_name() === "cli" && !defined('CONSOLE') ) define('CONSOLE', true);
+        if ( !isset($_SERVER['GATEWAY_INTERFACE']) && !defined('CONSOLE') ) define('CONSOLE', true);
+        define('CLI', php_sapi_name() === "cli" ? true : false);
+        if ( !CLI ) {
+            define('DOMAIN', strtolower($_SERVER['HTTP_HOST']));
+        } else {
+            define('DOMAIN','');
+        }
+        if( $_SERVER['SERVER_ADDR'] == '127.0.0.1' ) {
+            define('LOCALHOST',TRUE);
+        }
     }
 
     public static function Goodbye($redirect = null) {
+        define('GOODBYE',1);
         static $done = false;
         if ( $done ) {
             if ( defined('CRASHED') ) exit(99);

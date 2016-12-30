@@ -40,7 +40,7 @@ class Data
         return new ArrayIterator(get_object_vars($this));
     }
 
-    public function  __get($k) {
+    public function  & __get($k) {
         return isset($this->$k) ? $this->$k : NULL;
     }
 
@@ -60,7 +60,7 @@ class Data
         return json_encode($this);
     }
 
-    public function offsetGet($k) {
+    public function & offsetGet($k) {
         return isset($this->{"$k"}) ? $this->{"$k"} : NULL;
     }
 

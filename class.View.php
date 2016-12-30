@@ -37,6 +37,10 @@ class View implements DoesDataStorage {
         return false;
     }
 
+    public function getName() {
+        return $this->name;
+    }
+
     public function hasParent() {
         return $this->parentView === null ? false : true;
     }

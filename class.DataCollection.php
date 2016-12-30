@@ -4,11 +4,14 @@ class DataCollection implements ArrayAccess, IteratorAggregate, Countable, JSONA
 
     use TLoggable;
 
-    public $items = [];
+    protected $items = [];
 
     public function __construct($data) {
 
         if ( $data instanceof Data ) {
+            if( count($data) &&  (!isset($data[0]) || !isset($data[count($data)-1])) ) {
+                throw new Exception ("DataCollection must be a numeric array");
+            }
             $this->dump($data->numeric(), 'data->numeric');
             foreach ( $data as $v ) {
                 $this->items[] = $v;

@@ -1,6 +1,6 @@
 <?php
 
-abstract class Router {
+abstract class Router extends Container {
 
     use TLoggable;
 

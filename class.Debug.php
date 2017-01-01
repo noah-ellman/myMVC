@@ -1,10 +1,9 @@
 <?php
 
-class Debug implements IService {
+class Debug extends Container implements IService {
 
     private static $instance = null;
 
-    private $app;
 
     public function provides() {
         return 'debug';
@@ -63,8 +62,8 @@ class Debug implements IService {
             //set_error_handler("onError",E_ALL &~ E_NOTICE &~ E_WARNING &~ E_STRICT &~ E_DEPRECATED );
         }
         set_exception_handler([$this, 'onException']);
-        $this->log('<BR><br><br><B style="color:yellow; font-size: 1.1em;">[' . $_SERVER['PHP_SELF'] . ']</B> [' . (isset($_REQUEST['p']) ? $_REQUEST['p'] : '?') . ' ' . (isset($_REQUEST['q']) ? $_REQUEST['q'] : '?') . '] <b style="float:right;">' . date("g:i a") . ' </b><BR>');
-
+        $this->log('<BR><br><br><B style="color:yellow; font-size: 1.1em;">[' . $_SERVER['PHP_SELF'] . ']</B> [' . (isset($_REQUEST['_route_']) ? $_REQUEST['_route_'] : '?') . '] <b style="float:right;">' . date("g:i a") . ' </b><BR>');
+        parent::__construct();
     }
 
     public static function __callStatic($func, $args) {
@@ -211,14 +210,9 @@ class Debug implements IService {
 
             return;
         }
-        if ( defined('NOAHBOT') ) echo $msghtml;
         if ( $fail ) {
-            if ( !defined('CRASHED') ) define('CRASHED', 1);
-            if ( defined('POD') && !defined('AJAX') && !defined('API') ) {
-            }
-            else {
-                echo $msghtml;
-            }
+
+            echo $msghtml;
         }
     }
 
@@ -247,7 +241,7 @@ class Debug implements IService {
             readfile('/www/500.htm');
             Bootstrap::Goodbye();
         }
-        else if ( defined('WEBSITE') ) {
+        else if ( defined('DEBUG') ) {
             echo($msghtml);
             header('HTTP/1.1 500 Internal Server Error');
         }
@@ -280,6 +274,7 @@ class Debug implements IService {
         if ( defined('CONSOLE') && !defined('DEBUGTOFILE') ) define('DEBUGTOFILE', 1);
         $output_styles = <<<'EOD'
 		<STYLE type="text/css">
+		    BODY { color: #888; line-height:1.05em; font-family: "Source Code Pro"; }
 			DIV.q { background-color:#292929;padding:3px 5px 4px 3px;margin:2px 2px 2px 1px; font-family:Consolas; font-size:12px !important; border-top:1px solid #777; border-left:1px solid #888;}
 			div.odump { clear: both; padding:2px 3px 2px 8px; margin-top: 1px; background-color:#363636; color: #EEEEEE; border-top:1px solid #222; }
 			div.odump table { border:0; padding:0; margin:0; }
@@ -431,8 +426,8 @@ EOD;
         }
         else if ( !is_array($object) ) {
             $vartype = gettype($object);
-            if ( $vartype == 'boolean' ) return '[<b style="color:#666666;">boolean</b>] : <i>' . ($object ? 'TRUE' : 'FALSE') . "</i><BR>\r\n";
-            else return "[<b style=\"color:#666666;\">$vartype</b>] : <i>$object</i><BR>\n";
+            if ( $vartype == 'boolean' ) return '[<b style="color:#888;">boolean</b>] : <i>' . ($object ? 'TRUE' : 'FALSE') . "</i><BR>\r\n";
+            else return "[<b style=\"color:#888;\">$vartype</b>] : <i>$object</i><BR>\n";
         }
         $i = 0;
         foreach ( $object as $k => $v ) {
@@ -465,8 +460,8 @@ EOD;
                     else $v = 'FALSE';
                 }
                 if ( !empty($suffix) ) $v2 = '';
-                if ( is_null($v) ) $str .= "<b>$k</b>$suffix : <i style=\"color:#555555;font-style:italic;\">NULL</i><BR>\n";
-                else if ( !is_string($v) && (string)$v == '' ) $str .= "<b>$k</b>$suffix : <i style=\"color:#555555;font-style:italic;\">$v2</i><BR>";
+                if ( is_null($v) ) $str .= "<b>$k</b>$suffix : <i style=\"color:#888;font-style:italic;\">NULL</i><BR>\n";
+                else if ( !is_string($v) && (string)$v == '' ) $str .= "<b>$k</b>$suffix : <i style=\"color:#888;font-style:italic;\">$v2</i><BR>";
                 else $str .= "<b>$k</b>$suffix : <i>" . ((string)$v) . "</i><BR>\n";
             }
         }

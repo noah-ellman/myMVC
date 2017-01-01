@@ -61,7 +61,7 @@ class Data
     }
 
     public function & offsetGet($k) {
-        return isset($this->{"$k"}) ? $this->{"$k"} : NULL;
+        return $this->{"$k"};
     }
 
     public function offsetSet($k, $v) {

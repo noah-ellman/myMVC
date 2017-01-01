@@ -10,7 +10,7 @@ trait TLoggable {
             if( property_exists($this, 'name' ) ) $classname .= "({$this->name})";
             else if ( is_callable($this, 'name' )  ) $classname .= "({$this->name()})";
             else if ( is_callable($this, 'getName' ) ) $classname .= "({$this->getName()})";
-            $args[0] = $prefix . '<b>[' . $classname . ']</b> ' . $args[0];
+            $args[0] = $prefix . '<b>[' . $classname . ']</b> ' . (empty($prefix) ? $args[0] : substr($args[0],1));
         }
         $allstrings = true;
         foreach ( $args as $k => $v ) {

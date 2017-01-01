@@ -1,6 +1,6 @@
 <?php
 
-abstract class Controller implements DoesDataStorage {
+abstract class Controller extends Container implements DoesDataStorage {
 
     use TLoggable;
 
@@ -30,12 +30,9 @@ abstract class Controller implements DoesDataStorage {
         if (!is_callable([$this,
                           $action])
         ) throw new Exception("Invalid action '<i>$action</i>' in " . get_class($this));
-        return call_user_func([$this, $action]);
+        $result = call_user_func([$this, $action]);
+        return $this->afterAction($result);
 
-    }
-
-    public function getName() {
-        return get_class($this);
     }
 
     protected function getDefaultViewName() {
@@ -90,6 +87,11 @@ abstract class Controller implements DoesDataStorage {
         if (!($this->view instanceof View)) $this->view = new View($this->viewName, null, $this);
         return $this->view;
 
+    }
+
+    protected function afterAction($result = null) {
+        if( $this->view && !$this->view->isRendered() ) $this->view->sendTo($this->response);
+        return $result;
     }
 
     abstract protected function boot();

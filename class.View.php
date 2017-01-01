@@ -1,17 +1,17 @@
 <?php
 
-class View implements DoesDataStorage {
+class View extends Container implements DoesDataStorage {
 
     use TLoggable;
 
     protected static $sharedData = [];
-    public $name;
     protected $viewFile;
     protected $data;
     protected $helper;
     protected $parentView = null;
     protected $controller = null;
     protected $nestedViews = [];
+    protected $rendered = false;
 
     public function __construct($name, View $parentView = null, Controller $controller = null) {
         $this->name = $name;
@@ -20,29 +20,8 @@ class View implements DoesDataStorage {
         $this->viewFile = $this->findViewFile($name);
         $this->data = new Data();
         $this->log("Controller", get_class($controller), 'loaded view:');
-        if ( $this->parentView ) $this->log("Booting view <i>{$this->name}</i> from inside <i>{$this->parentView->name}</i>");
+        if ($this->parentView) $this->log("Booting view <i>{$this->name}</i> from inside <i>{$this->parentView->name}</i>");
         else $this->log("Booting view <i>{$this->name}</i>");
-    }
-
-    private function findViewFile($name = null) {
-        if ( $name === null ) $name = $this->name;
-        if( $name !== null ) {
-            $root = App::getConfig('approot', '.');
-            $views = App::getConfig('viewsdir', 'views');
-            $file = $root . DIRECTORY_SEPARATOR . $views . DIRECTORY_SEPARATOR . $name . '.php';
-            if ( $name != null && !file_exists($file) ) throw new Exception("Can't find view: $file");
-            $this->viewFile = $file;
-            return $file;
-        }
-        return false;
-    }
-
-    public function getName() {
-        return $this->name;
-    }
-
-    public function hasParent() {
-        return $this->parentView === null ? false : true;
     }
 
     public static function factory($name, $args = []) : View {
@@ -53,6 +32,18 @@ class View implements DoesDataStorage {
 
     public static function share($key, $val) {
         self::$sharedData[ $key ] = $val;
+    }
+
+    public function getName() {
+        return $this->name;
+    }
+
+    public function hasParent() {
+        return $this->parentView === null ? false : true;
+    }
+
+    public function getParent() {
+        return $this->parentView;
     }
 
     public function setModel(Model $args) : View {
@@ -68,20 +59,24 @@ class View implements DoesDataStorage {
 
     public function render(Response $response = null) : View {
         $this->log(__METHOD__);
-        if ( $response !== null ) return $this->renderTo($response);
+        if ($response !== null) return $this->renderTo($response);
         extract(self::$sharedData);
         extract($this->data->toArray());
         $action = $this->getController()->getAction();
         $controller = $this->getController()->getName();
-        if ( $this->type() == 'html' && $this->viewFile ) {
+        if ($this->type() == 'html' && $this->viewFile) {
             include($this->viewFile);
         }
+        $this->rendered = true;
         return $this;
+    }
+
+    public function isRendered() {
+        return $this->rendered;
     }
 
     public function renderTo(Response $response) {
         $response->setView($this);
-                // ->setContent($this->renderToString());
         return $this;
     }
 
@@ -112,7 +107,7 @@ class View implements DoesDataStorage {
     public function type() { return 'html'; }
 
     public function addData($args) : View {
-        foreach ( $args as $k => $v ) $this->data[ $k ] = $v;
+        foreach ($args as $k => $v) $this->data[ $k ] = $v;
         return $this;
     }
 
@@ -131,5 +126,23 @@ class View implements DoesDataStorage {
 
     protected function getController() : Controller {
         return !is_null($this->controller) ? $this->controller : Controller::$activeController;
+    }
+
+    private function findViewFile($name = null) {
+        if ($name === null) $name = $this->name;
+        if ($name !== null) {
+            $root = App::getConfig('approot', '.');
+            $views = App::getConfig('viewsdir', 'views');
+            $file = $root . DIRECTORY_SEPARATOR . $views . DIRECTORY_SEPARATOR . $name . '.php';
+            if ($name != null && !file_exists($file)) throw new Exception("Can't find view: $file");
+            $this->viewFile = $file;
+            return $file;
+        }
+        return false;
+    }
+
+    public function data($args=null) {
+        if( $args ) return $this->setData($args);
+        else return $this->getData();
     }
 }

@@ -51,9 +51,9 @@ class Bootstrap {
         if ( !CLI ) {
             define('DOMAIN', strtolower($_SERVER['HTTP_HOST']));
         } else {
-            define('DOMAIN','');
+            define('DOMAIN','localhost');
         }
-        if( $_SERVER['SERVER_ADDR'] == '127.0.0.1' ) {
+        if( !CLI && $_SERVER['SERVER_ADDR'] == '127.0.0.1' ) {
             define('LOCALHOST',TRUE);
         }
     }

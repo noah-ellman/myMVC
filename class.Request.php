@@ -1,5 +1,5 @@
 <?php
-  
+
 use Symfony\Component\HttpFoundation\Request as SymfonyRequest;
 
 class Request extends SymfonyRequest {
@@ -14,8 +14,6 @@ class Request extends SymfonyRequest {
         parent::__construct($query, $request, $attributes, $cookies, $files, $server, $content);
         $this->_route_ = $this->query->get('_route_','/');
         $this->query->remove('_route_');
-        $this->logDump($this->request->all(),'request');
-        $this->logDump($this->query->all(),'query');
     }
 
     public function route() {
@@ -52,13 +50,12 @@ class Request extends SymfonyRequest {
             return true;
         else return false;
     }
- 
+
     public function getUploadedFile() : \Symfony\Component\HttpFoundation\File\UploadedFile {
         $file = $this->files->keys();
         if( !count($file) ) return null;
         $file = $this->files->get($file[0]);
         return $file;
-
     }
 
 

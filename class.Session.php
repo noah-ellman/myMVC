@@ -8,7 +8,6 @@ class Session
 
     protected static $instance = null;
     public $sessionID;
-    private $app;
 
     public function __construct(App $app, array $args = []) {
         if (self::$instance !== null) throw new Exception("Session can't have two instances");

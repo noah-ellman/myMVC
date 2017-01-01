@@ -1,7 +1,7 @@
 <?php
 
 
-class ViewHelper {
+class ViewHelper extends Container {
 
     protected $view;
 

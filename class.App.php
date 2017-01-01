@@ -1,6 +1,6 @@
 <?php
 
-class App {
+class App extends Container {
 
     protected static $services = [];
     protected static $router = null;
@@ -11,6 +11,7 @@ class App {
     public function __construct() {
         if (self::$instance !== null) throw new Exception("App is a singleton.");
         self::$instance = $this;
+        parent::__construct();
         $this->boot();
     }
 
@@ -85,16 +86,22 @@ class App {
             foreach ($class as $v) {
                 $this->register($v);
             }
+
             $this->registerDone();
             return;
         }
-        if (!class_exists($class)) throw new Exception($class . " can't register, doesn't exist");
+        if (!class_exists($class)) throw new Exception($class . " can't register, doesn't exist.");
         if (!class_implements($class, 'IService')) throw new Exception ($class . " must implement IService");
 
         $instance = $this->create($class);
         if ($instance) {
-            self::$services[ strtolower($class) ] = $instance;
-            App::log("Registered with dependency injection:  $class");
+            if( is_callable($instance,'provides') ) {
+                $provides = $instance->provides();
+                self::$services[$provides] = $instance;
+            } else {
+                self::$services[ strtolower($class) ] = $instance;
+            }
+            App::log("Registered with dependency injection: <i>$class</i>");
         }
         else {
             echo("!Could not register: $class");
@@ -105,7 +112,8 @@ class App {
 
     }
 
-    public function registerDone() {
+    protected function registerDone() {
+
 
     }
 

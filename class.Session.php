@@ -29,9 +29,6 @@ class Session
         if (isset($_SESSION[ $k ])) {
             return $_SESSION[ $k ];
         }
-        else {
-            return null;
-        }
     }
 
     public function __set($k, $v) {
@@ -106,11 +103,13 @@ class Session
 
     public function addAlertMsg($msg, $type = 'info') {
         if (!$this->alertMsgs) $this->alertMsgs = [];
-        $_SESSION['alertMsgs'][] = ['message' => $msg, 'type' => $type];
-        //   $this->alertMsgs[] = ['message' => $msg, 'type' => $type];
+        if( is_array($msg) ) {
+            foreach($msg as $v) $_SESSION['alertMsgs'][] = ['message' => $v, 'type' => $type];
 
-        //  $this->alertMsgs[] = ['message' => $msg, 'type' => $type];
-
+        } else {
+            $_SESSION['alertMsgs'][] = ['message' => $msg, 'type' => $type];
+        }
+        return $this;
     }
 
     public function getAlertMsg() {

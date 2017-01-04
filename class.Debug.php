@@ -4,15 +4,22 @@ class Debug extends Container implements IService {
 
     private static $instance = null;
 
+    private $enabled = true;
+
+
 
     public function provides() {
         return 'debug';
     }
 
     public function __construct(App $app) {
-        $this->app = $app;
+        parent::__construct();
 
         self::$instance = $this;
+
+
+        $this->enabled( $this->app->getConfig('debug', true) );
+
         $logdir = dirname($_SERVER['SCRIPT_FILENAME']);
 
         if ( isset($_SERVER['HTTP_X_REQUESTED_WITH']) ) {
@@ -73,7 +80,13 @@ class Debug extends Container implements IService {
         return call_user_func_array($me->$func, $args);
     }
 
+    public function enabled($onoff=null) {
+        if( $onoff === null ) return $this->enabled;
+        $this->enabled = !!$onoff;
+    }
+
     public function log($msg) {
+        if( !$this->enabled() ) return;
         $cargs = func_num_args();
         if ( $cargs > 1 ) {
             if ( ($cargs == 2 || $cargs == 3) && (is_array($msg) || is_object($msg)) ) {
@@ -103,6 +116,8 @@ class Debug extends Container implements IService {
     }
 
     function _dump($object, $label = '', $dhtml = true) {
+        if( !$this->enabled() ) return;
+
         $c = 0;
         $str = $this->_vardump($object, '', 1, $c);
         if ( empty($label) ) {
@@ -144,6 +159,7 @@ class Debug extends Container implements IService {
     }
 
     public function onError($errno, $errstr, $errfile, $errline) {
+        if( !$this->enabled() ) return;
         static $count = 0;
         static $lasterror = '';
         static $repeat = false;
@@ -252,6 +268,7 @@ class Debug extends Container implements IService {
     }
 
     public function saveLog($crashed = false) {
+        if( !$this->enabled() ) return;
         if ( defined('DEBUG_PRINTED') ) return;
         define('DEBUG_PRINTED', 1);
         $output = '';
@@ -375,6 +392,7 @@ EOD;
     }
 
     public function logDump($o, $l = null, $return = false) {
+        if( !$this->enabled() ) return;
         $dump = $this->_dump($o, $l, (is_object($o) || (is_array($o) && count($o) > 5) ? 1 : 0));
         if ( $return ) return $dump;
         else $this->log(is_null($l) ? $o : $dump);
@@ -407,6 +425,8 @@ EOD;
     }
 
     private function _vardump($object, $str = '', $level = 1, &$c = 0) {
+        if( !$this->enabled() ) return;
+
         $pad = str_repeat('&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;', $level);
         if ( $level > 8 ) {
             $str .= "$pad<span style='color:red;'>*Too much recursion*</span><BR>\r\n";

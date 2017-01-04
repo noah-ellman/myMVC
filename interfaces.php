@@ -5,6 +5,7 @@ interface LogInterface {
 
     function log($msg,...$blah);
 
+
 }
 interface Expando {
     function __get($k);
@@ -31,3 +32,4 @@ interface Tool {
     public function input();
     public function output();
 }
+

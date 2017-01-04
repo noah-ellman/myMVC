@@ -7,11 +7,11 @@ abstract class Controller extends Container implements DoesDataStorage {
     public static $activeController;
     protected $data;
     protected $request;
-    protected $view;
     protected $viewName;
     protected $action;
     protected $defaultAction = 'index';
     protected $response;
+    private $view;
 
     public function __construct(Request $request, Response $response, $action = null) {
         $this->request = $request;
@@ -21,33 +21,22 @@ abstract class Controller extends Container implements DoesDataStorage {
         Cloud::controller(get_class($this));
         Cloud::action($action);
         $this->log("Booting Controller", $this->getName());
+        parent::__construct();
         $this->boot();
     }
 
     public function run() {
         self::$activeController = $this;
         $action = $this->getAction();
-        if (!is_callable([$this,
-                          $action])
-        ) throw new Exception("Invalid action '<i>$action</i>' in " . get_class($this));
+        if (!is_callable([$this, $action]))
+            throw new Exception("Invalid action '<i>$action</i>' in " . get_class($this));
         $result = call_user_func([$this, $action]);
         return $this->afterAction($result);
 
     }
 
-    protected function getDefaultViewName() {
-        $name = get_class($this);
-        $name = preg_replace_callback('/[A-Z]/', function($str) {
-            return '-'.strtolower($str[0]);
-        },$name);
-        if( substr($name,'0','1') == '-' ) $name = substr($name,1);
-        $this->log("Defualt view name =", $name);
-        return $name;
-
-    }
-
     public function getAction() : string {
-        $action = $this->action ?? $this->defaultAction;
+        $action = $this->action ?: $this->defaultAction;
         $action = "action" . ucwords($action);
         return $action;
     }
@@ -83,18 +72,33 @@ abstract class Controller extends Container implements DoesDataStorage {
             }
             $this->viewName = $viewName;
         }
-        if( $viewName === null && !$this->viewName )  $this->viewName = $this->getDefaultViewName();
+        if ($viewName === null && !$this->viewName) $this->viewName = $this->getDefaultViewName();
         if (!($this->view instanceof View)) $this->view = new View($this->viewName, null, $this);
         return $this->view;
 
     }
 
+    protected function useView($viewName = null) {
+
+    }
+
+    protected function getDefaultViewName() {
+        $name = get_class($this);
+        $name = preg_replace_callback('/[A-Z]/', function($str) {
+            return '-' . strtolower($str[0]);
+        }, $name);
+        if (substr($name, '0', '1') == '-') $name = substr($name, 1);
+        $this->log("Defualt view name =", $name);
+        return $name;
+
+    }
+
     protected function afterAction($result = null) {
-        if( $this->view && !$this->view->isRendered() ) $this->view->sendTo($this->response);
+        if ($this->view && !$this->view->isRendered()) $this->view->sendTo($this->response);
         return $result;
     }
 
-    abstract protected function boot();
+    protected function boot() {}
 
 }
 

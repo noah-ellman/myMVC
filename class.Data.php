@@ -1,37 +1,42 @@
 <?
 
-
 class Data
     extends stdClass
     implements Expando, ArrayAccess, IteratorAggregate, Countable, JSONAble {
 
     const DATA_ADD_REPLACE_IF_EXISTS = 1;
-    const DATA_ADD_SKIP_IF_EXISTS = 2;
+    const DATA_ADD_SKIP_IF_EXISTS    = 2;
 
     use TLoggable;
+
     public function __construct() {
-        if( count(get_class_vars(Data::class)) > 0 ) { throw new Exception("Data object can't have properties"); }
+        if (count(get_class_vars(Data::class)) > 0) {
+            throw new Exception("Data object can't have properties");
+        }
         $arg_count = func_num_args();
         $args = func_get_args();
-        if ( !$arg_count ) return;
-        if ( $arg_count === 1 ) {
-            if ( is_object($args[0]) ) {
-                if( $args[0] instanceof DoesDataStorage ) $args[0] = $args[0]->getData()->toArray();
-                else if ( $args[0] instanceof Data ) { $args[0] = $args[0]->toArray(); }
+        if (!$arg_count) return;
+        if ($arg_count === 1) {
+            if (is_object($args[0])) {
+                if ($args[0] instanceof DoesDataStorage) $args[0] = $args[0]->getData()->toArray();
+                else if ($args[0] instanceof Data) {
+                    $args[0] = $args[0]->toArray();
+                }
                 else $args[0] = get_object_vars($args[0]);
             }
-            if ( is_array($args[0]) ) foreach ( $args[0] as $k => $v ) {
-                if ( is_numeric($k) ) $this[$k] = $v; else $this->$k = $v;
+            if (is_array($args[0])) foreach ($args[0] as $k => $v) {
+                if (is_numeric($k)) $this[ $k ] = $v;
+                else $this->$k = $v;
             }
-            else if ( is_string($args[0]) && $args[0]{0} == '{' ) {
+            else if (is_string($args[0]) && ($args[0]{0} == '{' || $args[0]{0} == '[')) {
                 $o = json_decode($args[0]);
-                if ( $o !== FALSE ) foreach ( $o as $k => $v ) $this->$k = $v;
+                if ($o) foreach ($o as $k => $v) $this->$k = $v;
             }
-        } else {
-            for ( $ii = 0; $ii < $arg_count; $ii += 2 ) $this->{$args[$ii]} = $args[$ii + 1];
+        }
+        else {
+            for ($ii = 0; $ii < $arg_count; $ii += 2) $this->{$args[ $ii ]} = $args[ $ii + 1 ];
         }
     }
-
 
     public function __destruct() {
     }
@@ -40,8 +45,8 @@ class Data
         return new ArrayIterator(get_object_vars($this));
     }
 
-    public function  & __get($k) {
-        return isset($this->$k) ? $this->$k : NULL;
+    public function __get($k) {
+        return isset($this->$k) ? $this->$k : null;
     }
 
     public function __set($k, $v) {
@@ -57,19 +62,21 @@ class Data
     }
 
     public function __toString() {
-        return json_encode($this);
-    }
-
-    public function & offsetGet($k) {
-        return $this->{"$k"};
-    }
-
-    public function offsetSet($k, $v) {
-        $this->$k = $v;
+        // return json_encode($this);
     }
 
     public function offsetExists($k) {
-        return isset($this->$k) ? TRUE : FALSE;
+        return isset($this->$k) ? true : false;
+    }
+
+    public function & offsetGet($k) {
+        if (is_int($k)) $k = (string)$k . '';
+        return $this->$k;
+    }
+
+    public function offsetSet($k, $v) {
+        if (is_int($k)) $k = (string)$k . '';
+        $this->$k = $v;
     }
 
     public function offsetUnset($k) {
@@ -81,13 +88,13 @@ class Data
     }
 
     public function __call($method, $args) {
-        $return = NULL;
-        switch ( strtolower($method) ) {
+        $return = null;
+        switch (strtolower($method)) {
             case 'toarray':
             case 'array':
-                if( isset($args[0]) && $args[0] == true) return Arr::obj2array($this);
+                if (isset($args[0]) && $args[0] == true) return Arr::obj2array($this);
                 $arr = get_object_vars($this);
-                if( array_key_exists("0",$arr) ) return Arr::numeric($arr);
+                if (array_key_exists("0", $arr)) return Arr::numeric($arr);
                 else return $arr;
                 break;
             case 'keys':
@@ -100,13 +107,15 @@ class Data
                 return Arr::array_numeric($this->array());
                 break;
         }
-        if( function_exists("array_$method") ) {
+        if (function_exists("array_$method")) {
             $method = "array_$method";
             array_unshift($args, get_object_vars($this));
-        } else if ( function_exists($method) ) {
-            array_push($args,get_object_vars($this));
-        } else {
-            return NULL;
+        }
+        else if (function_exists($method)) {
+            array_push($args, get_object_vars($this));
+        }
+        else {
+            return null;
         }
         return new static(call_user_func_array($method, $args));
     }
@@ -128,9 +137,9 @@ class Data
     }
 
     public function add($data, $mode = 1) {
-        foreach( $data as $k => $v) {
-            if( $mode == self::DATA_ADD_SKIP_IF_EXISTS ) {
-                if( isset($this->$k) ) continue;
+        foreach ($data as $k => $v) {
+            if ($mode == self::DATA_ADD_SKIP_IF_EXISTS) {
+                if (isset($this->$k)) continue;
             }
             $this->$k = $v;
         }

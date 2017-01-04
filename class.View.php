@@ -12,8 +12,10 @@ class View extends Container implements DoesDataStorage {
     protected $controller = null;
     protected $nestedViews = [];
     protected $rendered = false;
+    private $isRendering = false;
 
     public function __construct($name, View $parentView = null, Controller $controller = null) {
+        parent::__construct();
         $this->name = $name;
         $this->parentView = $parentView;
         $this->controller = $controller;
@@ -34,15 +36,11 @@ class View extends Container implements DoesDataStorage {
         self::$sharedData[ $key ] = $val;
     }
 
-    public function getName() {
-        return $this->name;
-    }
-
-    public function hasParent() {
+    public function hasParent() : bool {
         return $this->parentView === null ? false : true;
     }
 
-    public function getParent() {
+    public function getParent() : ?View {
         return $this->parentView;
     }
 
@@ -52,14 +50,20 @@ class View extends Container implements DoesDataStorage {
     }
 
     public function renderToString() : string {
+        $lastState = $this->rendered;
+        $this->rendered = false;
         ob_start();
         $this->render();
-        return ob_get_clean();
+        $return = ob_get_clean();
+        $this->rendered = $lastState;
+        return $return;
     }
 
     public function render(Response $response = null) : View {
         $this->log(__METHOD__);
         if ($response !== null) return $this->renderTo($response);
+        if( $this->isRendered() ) return $this;
+        $this->isRendering = true;
         extract(self::$sharedData);
         extract($this->data->toArray());
         $action = $this->getController()->getAction();
@@ -68,11 +72,19 @@ class View extends Container implements DoesDataStorage {
             include($this->viewFile);
         }
         $this->rendered = true;
+        $this->isRendering = false;
         return $this;
     }
 
     public function isRendered() {
         return $this->rendered;
+    }
+
+    public function isRendering() {
+        if( $this->isRendering ) return true;
+        if( $this->hasParent() )
+            if( $this->getParent()->isRendering() ) return true;
+        else return false;
     }
 
     public function renderTo(Response $response) {
@@ -99,21 +111,28 @@ class View extends Container implements DoesDataStorage {
         return $this;
     }
 
+    public function use () {
+        $this->sendTo($this->app->getResponse());
+    }
+
     public function sendTo(Response $response) {
         $response->setView($this);
         return $this;
     }
 
-    public function type() { return 'html'; }
+    protected function type() { return 'html'; }
 
     public function addData($args) : View {
         foreach ($args as $k => $v) $this->data[ $k ] = $v;
         return $this;
     }
 
-    public function __toString() {
-        return $this->renderToString();
+
+    public function data($args = null) {
+        if ($args) return $this->setData($args);
+        else return $this->getData();
     }
+
 
     protected function addView(string $name, $args = []) {
         $view = new View($name, $this, $this->getController());
@@ -121,6 +140,7 @@ class View extends Container implements DoesDataStorage {
              ->addData($args)
              ->addData(self::$sharedData);
         $this->nestedViews[] = $view;
+        if( !$this->isRendering() ) $this->render();
         return $view;
     }
 
@@ -131,8 +151,8 @@ class View extends Container implements DoesDataStorage {
     private function findViewFile($name = null) {
         if ($name === null) $name = $this->name;
         if ($name !== null) {
-            $root = App::getConfig('approot', '.');
-            $views = App::getConfig('viewsdir', 'views');
+            $root = $this->app->getConfig('approot', '.');
+            $views = $this->app->getConfig('viewsdir', 'views');
             $file = $root . DIRECTORY_SEPARATOR . $views . DIRECTORY_SEPARATOR . $name . '.php';
             if ($name != null && !file_exists($file)) throw new Exception("Can't find view: $file");
             $this->viewFile = $file;
@@ -141,8 +161,7 @@ class View extends Container implements DoesDataStorage {
         return false;
     }
 
-    public function data($args=null) {
-        if( $args ) return $this->setData($args);
-        else return $this->getData();
+    public function __toString() {
+        return $this->renderToString();
     }
 }

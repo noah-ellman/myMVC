@@ -102,18 +102,22 @@ class Arr {
     }
 
     public static function array_numeric($a) {
+        App::log("array_numeric");
+        App::log("Started with: ", count($a));
         if( is_object($a) ) $a = get_object_vars($a);
-      //  if (!is_array($a)) return [];
+        $a = (array)$a;
         if (self::is_numeric_array($a) ) return $a;
         $keys = array_keys($a);
         $new = [];
         for ($i = 0, $c = count($keys); $i < $c; $i++) {
             $k = $keys[$i];
             if (is_numeric($k)) {
-                $new[] = $a[$k];
+                $k = (int)$k;
+                if( !isset($a[$k]) ) $new[] = array_shift($a);
+                else $new[] = $a[$k];
             }
         }
-
+        App::log("Ended with: ", count($new));
         return $new;
     }
 

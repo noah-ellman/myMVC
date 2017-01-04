@@ -1,5 +1,5 @@
 <?php
-ob_start();
+if( php_sapi_name()!=='cli'){ob_start();}
 
 
 include 'traits.php';

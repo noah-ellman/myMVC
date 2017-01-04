@@ -20,6 +20,25 @@ class DBModel extends Model {
         $this->boot();
     }
 
+    protected function boot() {
+        if (!count($this->columns)) {
+            $this->columns = $this->getTableColumns()->getFieldsAndKeys();
+        }
+        if (!count($this->keys)) {
+       //     foreach ($this->getTableColumns()->getKeys() as $v) {
+       //         $this->keys[ $v ] = null;
+       //     }
+        }
+        $this->columns = array_diff($this->columns, $this->ignoredColumns);
+
+    }
+
+    public function getTableColumns() : DBTableFields {
+        if (!$this->columnsMetaData)
+            $this->columnsMetaData = new DBTableFields($this->dataSource);
+        return $this->columnsMetaData;
+    }
+
     public static function DataSource() {
         $stub = get_called_class();
         return (new $stub())->getDataSource();
@@ -31,22 +50,66 @@ class DBModel extends Model {
     }
 
     public function __set($k, $v) {
-        if (isset($this->keys[ $k ])) {
-            $this->log("Setting key to $v");
+        if (in_array($k, $this->getTableColumns()->getKeys())) {
+            $this->log("Setting Key $k to $v");
             $this->keys[ $k ] = $v;
         }
         parent::__set($k, $v);
     }
 
-    public function getTableColumns() : DBTableFields {
-        if (!$this->columnsMetaData)
-            $this->columnsMetaData = new DBTableFields($this->dataSource);
-        return $this->columnsMetaData;
+    public function find($what = null) {
+        if ($what == '*') {
+            return $this->loadAll();
+        }
+        if ($what !== null) $this->where([$this->getTableColumns()->getPrimary() => $what]);
+        if (!count($this->keys)) {
+            $this->log("!Warning - fetching without where");
+        }
+        $limit = ' LIMIT ' . implode(',', array_reverse($this->limit));
+        $fields = $this->columns;
+        $fields_str = ' `' . implode('`,`', array_merge(array_keys($this->keys), $fields)) . '`';
+        $result = $this->query("SELECT $fields_str FROM {$this->dataSource} " . $this->whereClause() . $limit);
+        if ($result) {
+            if ($this->limit[0] > 1) {
+                $this->setData($result);
+            }
+            else {
+                $this->setData($result[0]);
+            }
+        }
+        $this->loaded = true;
+        return parent::find();
+    }
+
+    public function reset() {
+        $this->keys = [];
+        $this->loaded = false;
+        return parent::reset();
+    }
+
+    public function loadAll() {
+        $orderBy = implode(',', $this->orderBy);
+        if (strlen($orderBy)) $orderBy = 'ORDER BY ' . $orderBy;
+        $fields = implode(',', array_merge(array_keys($this->keys), $this->columns));
+        $result = $this->query("select {$fields} from {$this->dataSource} $orderBy");
+        $this->setData($result);
+        return $this;
     }
 
     public function where(array $keys) {
         $this->keys = $keys;
         return $this;
+    }
+
+    protected function whereClause() {
+        $args = [];
+        if (!count($this->keys)) return '';
+        foreach ($this->keys as $k => $v) {
+            $args[] = " `$k` = '$v' ";
+        }
+        $args = implode(' AND ', $args);
+        $args = " WHERE $args ";
+        return $args;
     }
 
     public function getRelatedModel($class) {
@@ -73,38 +136,10 @@ class DBModel extends Model {
         return $this->insertID;
     }
 
-    public function find($what = null) {
-        if ($what == '*') {
-            return $this->loadAll();
-        }
-        if ($what !== null) $this->where([$this->getTableColumns()->getPrimary() => $what]);
-        if (!count($this->keys)) {
-            $this->log("!Warning - fetching without where");
-        }
-        $limit = ' LIMIT ' . implode(',', array_reverse($this->limit));
-        $fields = $this->columns;
-        $fields_str = ' `' . implode('`,`', array_merge(array_keys($this->keys), $fields)) . '`';
-        $result = $this->query("SELECT $fields_str FROM {$this->dataSource} " . $this->whereClause() . $limit);
-        if ($result) {
-            if ($this->limit[0] > 1) {
-                $this->setData($result);
-            }
-            else {
-                $this->setData($result[0]);
-            }
-            $return = true;
-        }
-        else {
-            $return = false;
-        }
-        $this->loaded = true;
-        return parent::find();
-    }
-
     public function save() {
         $primaryKey = $this->getTableColumns()->getPrimary();
         $exists = 0;
-        if (isset($this->keys[ $primaryKey ]))
+        if (isset($this->keys[ $primaryKey ]) && (int)$this->keys[$primaryKey ])
             $exists = $this->query("SELECT count(*) FROM {$this->dataSource} " . $this->whereClause() . ' LIMIT 1');
         if (!isset($this->keys[ $primaryKey ]) || !$exists) {
             return $this->insert();
@@ -136,53 +171,6 @@ class DBModel extends Model {
         return $this;
     }
 
-    public function delete($id) {
-        $id = (int)$id;
-        return $this->query("delete from {$this->dataSource} where id = $id LIMIT 1");
-    }
-
-    public function loadAll() {
-        $orderBy = implode(',', $this->orderBy);
-        if (strlen($orderBy)) $orderBy = 'ORDER BY ' . $orderBy;
-        $fields = implode(',', array_merge(array_keys($this->keys), $this->columns));
-        $result = $this->query("select {$fields} from {$this->dataSource} $orderBy");
-        $this->setData($result);
-        return $this;
-    }
-
-    public function getDataSource() {
-        return $this->dataSource;
-    }
-
-    public function reset() {
-        $this->keys = [];
-        $this->loaded = false;
-        return parent::reset();
-    }
-
-    protected function boot() {
-        if (!count($this->columns)) {
-            $this->columns = $this->getTableColumns()->getFields();
-        }
-        if (!count($this->keys)) {
-            foreach ($this->getTableColumns()->getKeys() as $v) {
-                $this->keys[ $v ] = '';
-            }
-        }
-        $this->columns = array_diff($this->columns, $this->ignoredColumns);
-        //$this->logDump($this->columns, "{$this->dataSource} columns");
-        //$this->logDump($this->keys, "{$this->dataSource} keys");
-    }
-
-    protected function whereClause() {
-        $args = [];
-        if (!count($this->keys)) return '';
-        foreach ($this->keys as $k => $v) $args[] = " `$k` = '$v' ";
-        $args = implode(' AND ', $args);
-        $args = " WHERE $args ";
-        return $args;
-    }
-
     protected function removeInvalidFields() {
         foreach ($this->data as $k => $v) {
             if (!in_array($k, $this->columns)) {
@@ -195,5 +183,14 @@ class DBModel extends Model {
 
             }
         }
+    }
+
+    public function delete($id) {
+        $id = (int)$id;
+        return $this->query("delete from {$this->dataSource} where id = $id LIMIT 1");
+    }
+
+    public function getDataSource() {
+        return $this->dataSource;
     }
 }

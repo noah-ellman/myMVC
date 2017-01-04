@@ -1,6 +1,13 @@
 <?php
 
-class Service extends Container {
+abstract class Service extends Container {
+
+    use TLoggable;
+
+    public function __construct() {
+        $this->log(__METHOD__);
+        parent::__construct();
+    }
 
 
     public function register() {

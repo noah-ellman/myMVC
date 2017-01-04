@@ -3,8 +3,10 @@
 abstract class HttpRouter extends Router {
 
 
-    public function __construct(Request $request) {
-        parent::__construct($request);
+    protected $responseContentType;
+
+    public function __construct(Request $request, Response $response) {
+        parent::__construct($request, $response);
     }
 
     protected function boot() {
@@ -14,8 +16,8 @@ abstract class HttpRouter extends Router {
         parent::boot();
     }
 
-    public function run() {
-        parent::run();
+    public function run() : Response {
+        return parent::run();
     }
 
     protected function parseRoutePath() {

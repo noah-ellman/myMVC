@@ -29,8 +29,9 @@ class Request extends SymfonyRequest {
         return $this->request->has($k) ? $this->request->get($k) : $this->query->get($k);
     }
 
-    public function post() {
-        return $this->request;
+    public function post($arg=null, $default=null) {
+        if( $arg !== null ) { return $this->request->get($arg,$default); }
+        else return $this->request;
     }
 
     public function isPost() {

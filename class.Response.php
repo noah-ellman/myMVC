@@ -36,6 +36,10 @@ class Response extends SymfonyResponse {
         return $this;
     }
 
+    public function getView() : View {
+        return $this->view;
+    }
+
     public function send() {
         $this->log(__METHOD__);
         if (!$this->isRedirection()) {

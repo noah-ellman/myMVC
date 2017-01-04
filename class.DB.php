@@ -13,7 +13,7 @@ class DB extends mysqli implements IService {
 
     public function __construct(App $app) {
         $this->app = $app;
-        $credentials = App::getConfig('db');
+        $credentials = $this->app->getConfig('db');
         foreach ($credentials as $k => $v) {
             $this->credentials[ $k ] = $v;
         }

@@ -96,12 +96,19 @@ class App extends Container {
         call_user_func_array([self::debug(), 'log'], func_get_args());
     }
 
+    public function get($name) {
+        return $this->findDependency($name);
+    }
+
     protected function findDependency($type) {
         if (is_a($this, $type)) return $this;
         if (is_a('Request', $type, true)) return self::getRequest();
         if (is_a('Response', $type, true)) return $this->getResponse();
         $ret = $this->getService($type);
-        if (!$ret && class_exists($type)) return $this->create($type);
+        if (!$ret && class_exists($type)) {
+            App::log("!couldn't find dep $type so making it now.");
+            return $this->create($type);
+        }
         return $ret;
     }
 

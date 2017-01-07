@@ -91,7 +91,7 @@ class DBModel extends Model {
         $orderBy = implode(',', $this->orderBy);
         if (strlen($orderBy)) $orderBy = 'ORDER BY ' . $orderBy;
         $fields = implode(',', array_merge(array_keys($this->keys), $this->columns));
-        $result = $this->query("select {$fields} from {$this->dataSource} $orderBy");
+        $result = $this->query("select {$fields} from {$this->dataSource} {$this->whereClause()} $orderBy");
         $this->setData($result);
         return $this;
     }
@@ -105,6 +105,7 @@ class DBModel extends Model {
         $args = [];
         if (!count($this->keys)) return '';
         foreach ($this->keys as $k => $v) {
+            if( empty($v) ) continue;
             $args[] = " `$k` = '$v' ";
         }
         $args = implode(' AND ', $args);
@@ -117,7 +118,8 @@ class DBModel extends Model {
             $model = new $class();
             $localkey = $this->relations[ $class ][0] ?? 'id';
             $localkeyvalue = $this->{$localkey};
-            $remotekey = $this->relations[ $class[1] ];
+            if( !$localkeyvalue ) throw new Error("Something is wrong with model relationships.");
+            $remotekey = $this->relations[ $class ][1] ?? 'id';
             $model->where([$remotekey => $localkeyvalue])->find();
             return $model;
         }
@@ -169,6 +171,10 @@ class DBModel extends Model {
         $this->query("INSERT INTO {$this->dataSource} (`$fields_str`) VALUES ($values)");
         $this->insertID = $this->db()->insert_id;
         return $this;
+    }
+
+    public function count() {
+        return count($this->data);
     }
 
     protected function removeInvalidFields() {

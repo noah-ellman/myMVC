@@ -72,6 +72,7 @@ class Arr {
         return FALSE;
     }
 
+
     public static function fetch($a, $key, $val) {
         foreach ($a as $k => $v) {
             if (isset($v[$key]) && $v[$key] == $val) return $v;
@@ -130,10 +131,10 @@ class Arr {
         return TRUE;
     }
 
-// -------- //
+
     public static function is_numeric_array($a) {
         if (!is_array($a)) return NULL;
-
+//        if( array_keys($a) == range(0,count($a)-1) )
         $last = count($a) - 1;
         if ($last < 0) return TRUE;
         if (isset($a[0]) && isset($a[$last])) return TRUE;
@@ -165,7 +166,7 @@ class Arr {
 
     public static function levenshtein_sort(&$a, $key, $val, $i = 1, $ii = 1, $iii = 1) {
         foreach ($a as &$v) $v['sort'] = levenshtein($val, $key, $i, $ii, $iii);
-        array_sort_2d($a, 'sort');
+        Arr::array_sort_2d($a, 'sort');
         foreach ($a as &$v) unset($v['sort']);
     }
 
@@ -253,7 +254,6 @@ class Arr {
     public static function rebuild($a) {
         $new = [];
         foreach ($a as $v) $new[] = $v;
-
         return $new;
     }
 ///////////////////////////////////////////////////

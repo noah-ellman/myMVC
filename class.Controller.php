@@ -79,7 +79,7 @@ abstract class Controller extends Container implements DoesDataStorage {
     }
 
     protected function useView($viewName = null) {
-
+        $this->getView($viewName ?? $this->viewName)->use();
     }
 
     protected function getDefaultViewName() {

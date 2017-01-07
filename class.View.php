@@ -26,6 +26,14 @@ class View extends Container implements DoesDataStorage {
         else $this->log("Booting view <i>{$this->name}</i>");
     }
 
+    public function __call($method, $args) {
+        if( $this->helper && method_exists($this->helper, $method)) {
+                return $this->helper->$method(...$args);
+        } else {
+            throw new Exception("Invalid method $method");
+        }
+    }
+
     public static function factory($name, $args = []) : View {
         $view = new View($name);
         $view->setData($args);
@@ -68,6 +76,7 @@ class View extends Container implements DoesDataStorage {
         extract($this->data->toArray());
         $action = $this->getController()->getAction();
         $controller = $this->getController()->getName();
+        $request = $this->app->getRequest();
         if ($this->type() == 'html' && $this->viewFile) {
             include($this->viewFile);
         }

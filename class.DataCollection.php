@@ -49,7 +49,10 @@ class DataCollection implements ArrayAccess, IteratorAggregate, Countable, JSONA
         foreach ($this->items as $i => $item) {
             $new[ $i ] = new Data();
             foreach ($keys as $key) {
-                $new[ $i ]->$key = $this->items[ $i ]->$key;
+                if (Str::contains($key, ' as ')) {
+                    list($key, $alias) = explode(' as ', $key);
+                } else { $alias = $key; }
+                $new[ $i ]->$alias = $this->items[ $i ]->$key;
             }
         }
         return new static($new);

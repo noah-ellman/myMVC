@@ -110,4 +110,10 @@ class Model extends Container implements JSONAble, Expando, DoesDataStorage, Ite
         return false;
     }
 
+    public function data($args = null) {
+        if ($args) return $this->setData($args);
+        else return $this->getData();
+    }
+
+
 }

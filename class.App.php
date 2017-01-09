@@ -17,9 +17,7 @@ class App extends Container {
     }
 
     protected function boot() {
-        $services = [Debug::class, Session::class, Cookies::class, DBDebug::class];
-
-        $this->register([Debug::class, Session::class, Cookies::class, DBDebug::class]);
+        $this->register([\Debug::class, \Session::class, \Cookies::class, \DBDebug::class]);
     }
 
     public function register($class) {
@@ -44,49 +42,37 @@ class App extends Container {
             else {
                 self::$services[ strtolower($class) ] = $instance;
             }
-            App::log("Registered with dependency injection: <i>$class</i>", $provides ?? '');
+            \App::log("Registered with dependency injection: <i>$class</i>");
         }
         else {
-            throw new Exception("Could not register $class");
+            echo("!Could not register: $class");
+            die();
         }
 
         return $instance;
 
     }
 
-    protected function registerDone($instance = null) {
-        foreach (self::$services as $name => $instance) {
-            $args = [];
+    protected function registerDone($instance=null) {
+        foreach(self::$services as $name => $instance) {
             $ref = new ReflectionClass($instance);
-            if (!$ref->hasMethod('requires')) continue;
-            $requires = $ref->getMethod('requires');
-            foreach ($requires->getParameters() as $k => $v) {
-                $arg = $this->findDependency($v->getType());
-                $args[] = $arg;
-            }
-            $instance->requires(...$args);
+            if( !$ref->hasMethod('requires') ) continue;
+           // foreach( $ref->getMethod('requires')->getExtension()->
+
+
         }
 
     }
 
-    public function create($class, ...$regular_args) {
+    public function create($class) {
         $args = [];
-        $ref = new ReflectionClass($class);
+        $ref = new \ReflectionClass($class);
         if (!$ref) return false;
         foreach ($ref->getConstructor()->getParameters() as $k => $v) {
-            if ($v->hasType()) {
-                $type = $v->getType();
-                if (!Str::instr($type, '/int|string|array|bool/')) {
-                    $arg = $this->findDependency($v->getType());
-                    if ($arg !== null) {
-                        $args[] = $arg;
-                        continue;
-                    }
-                }
-            }
-            if ($v->isDefaultValueAvailable()) break;
-            //    if ($v->allowsNull()) $args[] = null;
-            //    if ($v->isOptional()) break;
+            $arg = $this->findDependency($v->getType());
+            if ($arg !== null) $args[] = $arg;
+            if ($v->allowsNull()) $args[] = null;
+            if ($v->isOptional()) break;
         }
         return new $class(...$args);
 
@@ -96,34 +82,21 @@ class App extends Container {
         call_user_func_array([self::debug(), 'log'], func_get_args());
     }
 
-    public function get($name) {
-        return $this->findDependency($name);
-    }
-
     protected function findDependency($type) {
         if (is_a($this, $type)) return $this;
         if (is_a('Request', $type, true)) return self::getRequest();
-        if (is_a('Response', $type, true)) return $this->getResponse();
         $ret = $this->getService($type);
-        if (!$ret && class_exists($type)) {
-            App::log("!couldn't find dep $type so making it now.");
-            return $this->create($type);
-        }
+        if (!$ret && class_exists($type)) return $this->create($type);
         return $ret;
     }
 
     public static function debug() {
-        return self::$services['debug'] ?? new Dummy();
+        return self::$services['debug'] ?? new \Dummy();
     }
 
-    public static function getRequest() : Request {
-        if (!(self::$request instanceof Request)) self::$request = Request::getInstance();
+    public static function getRequest() : \Request {
+        if (!(self::$request instanceof \Request)) self::$request = \Request::getInstance();
         return self::$request;
-    }
-
-    public function getResponse() : Response {
-        if (!($this->response instanceof Request)) $this->response = new Response();
-        return $this->response;
     }
 
     public function getService(string $class) {
@@ -131,23 +104,6 @@ class App extends Container {
             if (is_a($v, $class) || $k == $class) return $v;
         }
         return null;
-    }
-
-    public function configure(Container $instance) {
-        $ref = new ReflectionClass($instance);
-        if ($ref->hasMethod('provides')) {
-            $closure = $ref->getMethod('provides')->getClosure($instance);
-            $provides = $closure->call($instance);
-            self::$services[ $provides ] = $instance;
-        }
-        //        if ($ref->hasMethod('requires')) {
-        //            $requires = $ref->getMethod('requires')->getStaticVariables();
-        //            foreach ($requires->getParameters() as $k => $v) {
-        //            $arg = $this->findDependency($v->getType());
-        //            $args[] = $arg;
-        //        }
-        //        $instance->requires(...$args);
-
     }
 
     public static function __callStatic($name, $args) {
@@ -175,6 +131,11 @@ class App extends Container {
         self::$router = new $class(self::getRequest(), $this->getResponse());
     }
 
+    public function getResponse() : Response {
+        if (!($this->response instanceof Request)) $this->response = new Response();
+        return $this->response;
+    }
+
     public static function getConfig($key = null, $default = null) {
         if ($key === null) return Bootstrap::$config;
         return Bootstrap::$config[ $key ] ?? $default;
@@ -197,9 +158,8 @@ class App extends Container {
     }
 
     public function shutdown() {
-        Bootstrap::Goodbye();
+        \Bootstrap::Goodbye();
     }
 
     private function __clone() { }
-
 }

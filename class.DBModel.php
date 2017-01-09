@@ -108,6 +108,7 @@ class DBModel extends Model {
             if( empty($v) ) continue;
             $args[] = " `$k` = '$v' ";
         }
+        if( !count($args) ) return '';
         $args = implode(' AND ', $args);
         $args = " WHERE $args ";
         return $args;

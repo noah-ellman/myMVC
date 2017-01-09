@@ -31,6 +31,10 @@ class Session
         }
     }
 
+    public function get($k, $default=null) {
+        return $this->$k ?? $default;
+    }
+
     public function __set($k, $v) {
         if ($v === null) unset($_SESSION[ $k ]);
         else $_SESSION[ $k ] = $v;

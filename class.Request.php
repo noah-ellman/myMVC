@@ -9,11 +9,15 @@ class Request extends SymfonyRequest {
     protected static $instance = null;
     protected $_route_;
 
+    public $session;
+
+
 
     public function __construct(array $query = array(), array $request = array(), array $attributes = array(), array $cookies = array(), array $files = array(), array $server = array(), $content = null) {
         parent::__construct($query, $request, $attributes, $cookies, $files, $server, $content);
         $this->_route_ = $this->query->get('_route_','/');
         $this->query->remove('_route_');
+        $this->session = App::getInstance()->getService('session');
     }
 
     public function route() {
@@ -26,7 +30,7 @@ class Request extends SymfonyRequest {
     }
 
     public function __get($k) {
-        return $this->request->has($k) ? $this->request->get($k) : $this->query->get($k);
+        return $this->request->get($k) ?: $this->query->get($k) ?: $this->session->get($k);
     }
 
     public function post($arg=null, $default=null) {
@@ -58,6 +62,7 @@ class Request extends SymfonyRequest {
         $file = $this->files->get($file[0]);
         return $file;
     }
+
 
 
 

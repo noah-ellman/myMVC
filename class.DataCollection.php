@@ -95,11 +95,11 @@ class DataCollection implements ArrayAccess, IteratorAggregate, Countable, JSONA
         return json_encode($this);
     }
 
-    public function offsetExists($k) {
+    public function offsetExists($k)  {
         return isset($this->items[ $k ]) ? true : false;
     }
 
-    public function offsetGet($k) {
+    public function offsetGet($k) : ?Data {
         return isset($this->items[ $k ]) ? $this->items["$k"] : null;
     }
 

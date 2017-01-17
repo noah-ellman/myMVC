@@ -166,7 +166,7 @@ class Arr {
 
     public static function levenshtein_sort(&$a, $key, $val, $i = 1, $ii = 1, $iii = 1) {
         foreach ($a as &$v) $v['sort'] = levenshtein($val, $key, $i, $ii, $iii);
-        Arr::array_sort_2d($a, 'sort');
+        Arr::sort2d($a, 'sort');
         foreach ($a as &$v) unset($v['sort']);
     }
 

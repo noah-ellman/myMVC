@@ -9,6 +9,15 @@ class Data
 
     use TLoggable;
 
+    /**
+     * @return DataCollection
+     */
+
+    public function collection() {
+        $this->log(__METHOD__);
+        return new \DataCollection($this);
+    }
+
     public function __construct() {
         if (count(get_class_vars(Data::class)) > 0) {
             throw new Exception("Data object can't have properties");
@@ -62,7 +71,7 @@ class Data
     }
 
     public function __toString() {
-        // return json_encode($this);
+        return json_encode($this);
     }
 
     public function offsetExists($k) {
@@ -143,11 +152,9 @@ class Data
             }
             $this->$k = $v;
         }
+
     }
 
-    public function collection() {
-        $this->log(__METHOD__);
-        return new DataCollection($this);
-    }
+
 
 }

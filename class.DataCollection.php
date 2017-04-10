@@ -112,11 +112,11 @@ class DataCollection implements ArrayAccess, IteratorAggregate, Countable, JSONA
     }
 
     public function count() {
-        return count($this);
+        return count($this->items);
     }
 
     public function length() {
-        return count($this);
+        return count($this->items);
     }
 
     public function toJson() {
@@ -149,6 +149,7 @@ class DataCollection implements ArrayAccess, IteratorAggregate, Countable, JSONA
             $ret = $fn->call($v);
             if ($ret instanceof Data) $this->items[ $k ] = $ret;
         }
+        return $this;
     }
 
 }

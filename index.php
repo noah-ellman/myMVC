@@ -30,5 +30,3 @@ $db->query("select 1 from DUAL");
 Bootstrap::Goodbye();
 
 
-
-?>

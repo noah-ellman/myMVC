@@ -22,6 +22,7 @@ class Session
     }
 
     public function __destruct() {
+
         session_write_close();
     }
 
@@ -29,6 +30,7 @@ class Session
         if (isset($_SESSION[ $k ])) {
             return $_SESSION[ $k ];
         }
+        return null;
     }
 
     public function get($k, $default=null) {

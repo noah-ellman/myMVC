@@ -237,7 +237,7 @@ class Arr {
                 if (!is_array($a2[$key])) {
                     $difference[$key] = $value;
                 } else {
-                    $new_diff = self::array_diff_assoc_recursive($value, $a2[$key]);
+                    $new_diff = self::diff_assoc_recursive($value, $a2[$key]);
                     if ($new_diff != FALSE) {
                         $difference[$key] = $new_diff;
                     }
@@ -258,5 +258,3 @@ class Arr {
     }
 ///////////////////////////////////////////////////
 }
-
-?>

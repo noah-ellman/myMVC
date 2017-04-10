@@ -13,9 +13,9 @@ class Data
      * @return DataCollection
      */
 
-    public function collection() {
+    public function collection() : DataCollection {
         $this->log(__METHOD__);
-        return new \DataCollection($this);
+        return new DataCollection($this);
     }
 
     public function __construct() {

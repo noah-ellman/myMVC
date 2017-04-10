@@ -30,7 +30,7 @@ class App extends Container {
             }
 
             $this->registerDone();
-            return;
+            return null;
         }
         if (!class_exists($class)) throw new Exception($class . " can't register, doesn't exist.");
         if (!class_implements($class, 'IService')) throw new Exception ($class . " must implement IService");

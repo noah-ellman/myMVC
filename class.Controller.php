@@ -11,6 +11,10 @@ abstract class Controller extends Container implements DoesDataStorage {
     protected $action;
     protected $defaultAction = 'index';
     protected $response;
+
+    /**
+     * @type View
+     */
     private $view;
 
     public function __construct(Request $request, Response $response, $action = null) {
@@ -41,7 +45,7 @@ abstract class Controller extends Container implements DoesDataStorage {
         return $action;
     }
 
-    public function & getData() {
+    public function & getData() : Data {
         return $this->data;
     }
 

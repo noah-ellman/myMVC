@@ -127,6 +127,7 @@ class DBModel extends Model {
         else {
             $this->log("!no related model $class");
         }
+        return null;
 
     }
 

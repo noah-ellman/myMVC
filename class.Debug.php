@@ -5,6 +5,7 @@ class Debug extends Container implements IService {
     private static $instance = null;
 
     private $enabled = true;
+    private $node_debug_stream = null;
 
 
 
@@ -69,8 +70,23 @@ class Debug extends Container implements IService {
             //set_error_handler("onError",E_ALL &~ E_NOTICE &~ E_WARNING &~ E_STRICT &~ E_DEPRECATED );
         }
         set_exception_handler([$this, 'onException']);
+
+       /* if( is_null($this->node_debug_stream)) {
+            $this->node_debug_stream = fsockopen('localhost',13371,$errno,$errstr,3);
+            if(  $this->node_debug_stream ) {
+                $this->log("~Opened node stream!");
+            } else {
+                $this->node_debug_stream = null;
+                $this->log("!Couldn't open node stream", $errstr);
+            }
+        }*/
+
         $this->log('<BR><br><br><B style="color:yellow; font-size: 1.1em;">[' . $_SERVER['PHP_SELF'] . ']</B> [' . (isset($_REQUEST['_route_']) ? $_REQUEST['_route_'] : '?') . '] <b style="float:right;">' . date("g:i a") . ' </b><BR>');
         parent::__construct();
+    }
+
+    public function __destruct() {
+        fclose($this->node_debug_stream);
     }
 
     public static function __callStatic($func, $args) {
@@ -113,6 +129,9 @@ class Debug extends Container implements IService {
         }
         if ( isset($_SESSION['__debug']) ) $_SESSION['__debug'][] = $msg;
         else    $GLOBALS['__debug'][] = $msg;
+        if( !is_null($this->node_debug_stream)) {
+            fwrite($this->node_debug_stream, $msg . "\n");
+        }
     }
 
     function _dump($object, $label = '', $dhtml = true) {

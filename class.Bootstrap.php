@@ -1,5 +1,5 @@
 <?php
-ob_start();
+if( php_sapi_name()!=='cli'){ob_start();}
 
 
 include 'traits.php';
@@ -38,9 +38,9 @@ class Bootstrap {
             });
 
         include 'class.Autoloader.php';
-        ( new \Autoloader() )->from($config['autoload'])->register();
+        ( new Autoloader() )->from($config['autoload'])->register();
 
-        new \App();
+        new App();
 
     }
 
@@ -64,7 +64,6 @@ class Bootstrap {
         if ( $done ) {
             if ( defined('CRASHED') ) exit(99);
             else exit(0);
-            return;
         } else {
             $done = true;
         }
@@ -86,8 +85,8 @@ class Bootstrap {
                 $redirect = 'http://' . $_SERVER['HTTP_HOST'] . ( substr($redirect, 0, 1) == '/' ? '' : '/' ) . $redirect;
             }
             $redirect = str_replace(' ', '+', $redirect);
-            \App::debug()->log('[' . $status . '] ' . $redirect);
-            \App::debug()->saveLog();
+            App::debug()->log('[' . $status . '] ' . $redirect);
+            App::debug()->saveLog();
             while ( ob_get_level() ) {
                 ob_end_clean();
             }
@@ -96,7 +95,7 @@ class Bootstrap {
             header("Location: {$redirect}", true, $status);
         } else {
             if ( defined('MINIFY') ) ob_minify();
-            \App::debug()->saveLog();
+            App::debug()->saveLog();
             while ( ob_get_level() ) {
                 ob_end_flush();
             }
@@ -108,7 +107,7 @@ class Bootstrap {
     }
 
     public static function addAutoloadFolder($folder) {
-        spl_autoload_register(function($class) {
+        spl_autoload_register(function($class) use ($folder) {
             include $folder . '/' . $class . '.php';
         });
 
@@ -130,5 +129,3 @@ class Bootstrap {
     }
 
 }
-
-?>

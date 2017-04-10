@@ -19,7 +19,7 @@ interface IService {
 
 interface DoesDataStorage {
 
-    function getData();
+    function getData() : Data;
     function setData($data);
     function addData($data);
 }

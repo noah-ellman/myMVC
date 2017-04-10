@@ -12,6 +12,8 @@ class Cloud extends Data {
         if( !self::$__self__ ) new Cloud();
         if( !count($argv) ) return (self::$__self__)->$name;
         else (self::$__self__)->$name = $argv[0];
+        return self::$__self__;
+
     }
 
     public static function render() {

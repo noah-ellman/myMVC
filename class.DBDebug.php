@@ -39,5 +39,3 @@ class DBDebug extends DB {
 
 
 }
-
-?>
